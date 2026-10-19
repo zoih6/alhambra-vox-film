@@ -1,0 +1,110 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Amiri;src:url(assets/fonts/Amiri-Bold.ttf);font-weight:700}
+@font-face{font-family:Amiri;src:url(assets/fonts/Amiri-Regular.ttf);font-weight:400}
+@font-face{font-family:Plex;src:url(assets/fonts/IBMPlexSansArabic-Bold.ttf);font-weight:700}
+@font-face{font-family:Plex;src:url(assets/fonts/IBMPlexSansArabic-Regular.ttf);font-weight:400}
+body{margin:0;background:#000}canvas{display:block}
+</style></head><body><canvas id="c" width="1280" height="720"></canvas>
+<img id="pano" src="assets/alhambra_panorama.jpg" style="display:none">
+<img id="eve" src="assets/alhambra_evening.jpg" style="display:none">
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=1280,H=720;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+function spring(t,k=170,d=26){if(t<=0)return 0;const w0=Math.sqrt(k),z=d/(2*w0);if(z<1){const wd=w0*Math.sqrt(1-z*z);return 1-Math.exp(-z*w0*t)*(Math.cos(wd*t)+(z*w0/wd)*Math.sin(wd*t));}return 1-Math.exp(-w0*t)*(1+w0*t);}
+const SNAPPY=[320,30],DEFAULT=[170,26],HEAVY=[90,20],PLAYFUL=[220,14];
+function track(t,keys,k=170,d=26){let v=keys[0][1];for(let i=1;i<keys.length;i++)v+=(keys[i][1]-keys[i-1][1])*spring(t-keys[i][0],k,d);return v;}
+function rng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const ease=t=>clamp(t);
+// ---- grain plate (seeded, pre-rendered once) ----
+const grain=document.createElement('canvas');grain.width=W;grain.height=H;{const g=grain.getContext('2d'),r=rng(7);const id=g.createImageData(W,H);for(let i=0;i<id.data.length;i+=4){const v=200+Math.floor(r()*55);id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.floor(r()*16);}g.putImageData(id,0,0);}
+// ---- paper helpers ----
+function tornPath(x,y,w,h,seed,jit=7){const r=rng(seed);ctx.beginPath();const n=7;for(let i=0;i<=n;i++){const px=x+(w/n)*i,py=y+(i===0||i===n?0:(r()-.5)*jit);i?ctx.lineTo(px,py):ctx.moveTo(px,py);}for(let i=1;i<=n;i++){const px=x+w,py=y+(h/n)*i+(i===n?0:(r()-.5)*jit);ctx.lineTo(px,py);}for(let i=n-1;i>=0;i--){const px=x+(w/n)*i,py=y+h+(i===0||i===n?0:(r()-.5)*jit);ctx.lineTo(px,py);}for(let i=n-1;i>=1;i--){const px=x,py=y+(h/n)*i+(r()-.5)*jit;ctx.lineTo(px,py);}ctx.closePath();}
+function paper(x,y,w,h,fill,seed,o={}){const s=o.scale??1,a=o.alpha??1,rot=o.rot||0;if(s<=0.01||a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.translate(x+w/2,y+h/2);ctx.rotate(rot);ctx.scale(s,s);ctx.translate(-w/2,-h/2);ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=18;ctx.shadowOffsetY=8;tornPath(0,0,w,h,seed,o.jit??7);ctx.fillStyle=fill;ctx.fill();ctx.shadowColor='transparent';ctx.restore();}
+function tape(x,y,w,rot=0,a=.85){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.globalAlpha=a;ctx.fillStyle='#d8c9a3';ctx.fillRect(-w/2,-13,w,26);ctx.globalAlpha=a*.5;ctx.fillStyle='#efe6cc';ctx.fillRect(-w/2,-13,w,5);ctx.restore();}
+function pin(x,y){ctx.save();ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=6;ctx.shadowOffsetY=3;ctx.fillStyle='#1b1b1f';ctx.beginPath();ctx.arc(x,y,9,0,7);ctx.fill();ctx.shadowColor='transparent';ctx.fillStyle='#3c3c44';ctx.beginPath();ctx.arc(x-2,y-2,3.5,0,7);ctx.fill();ctx.restore();}
+function txt(str,x,y,size,font,fill,align='right',alpha=1){ctx.save();ctx.globalAlpha=alpha;ctx.direction='rtl';ctx.textAlign=align;ctx.font=`${font==='A'?700:700} ${size}px ${font==='A'?'Amiri':'Plex'},sans-serif`;ctx.fillStyle=fill;ctx.fillText(str,x,y);ctx.restore();}
+function label(str,x,y,size=30){ctx.save();ctx.direction='rtl';ctx.font=`700 ${size}px Plex`;const w=ctx.measureText(str).width+44;ctx.fillStyle='#101014';ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=10;ctx.shadowOffsetY=4;ctx.fillRect(x-w,y-size-14,w,size+26);ctx.shadowColor='transparent';ctx.fillStyle='#f2ead8';ctx.textAlign='right';ctx.fillText(str,x-22,y+2);ctx.restore();return w;}
+// word-by-word RTL headline: words appear right->left with springs
+function headline(words,xRight,y,size,t0,stagger,preset,colors){ctx.save();ctx.direction='rtl';ctx.font=`700 ${size}px Amiri`;let x=xRight;words.forEach((wd,i)=>{const w=ctx.measureText(wd+' ').width;const s=spring((performance_t-t0-i*stagger),...preset);if(s>0.02){ctx.save();ctx.translate(x-w/2,y);ctx.scale(Math.max(.01,s),Math.max(.01,s));ctx.globalAlpha=clamp(s*1.4);ctx.textAlign='center';ctx.fillStyle=colors[i]||'#f2ead8';ctx.fillText(wd,0,0);ctx.restore();}x-=w;});ctx.restore();}
+let performance_t=0;
+// palace silhouette as layered paper pieces; prog per piece
+function palace(cx,baseY,scale,t,t0,ink=false){const pieces=[
+ // [dx,dy,w,h,color,seed]
+ [-260,-70,520,70,'#7d3423',31],[-260,-150,60,90,'#8f3a26',32],[-40,-190,80,130,'#9c4128',33],[150,-140,70,80,'#8f3a26',34],[60,-110,110,50,'#7d3423',35],[-170,-120,90,55,'#93402a',36]];
+ pieces.forEach((p,i)=>{const s=spring(t-t0-i*.28,...PLAYFUL);if(s<=0.02)return;const[dx,dy,w,h,c,sd]=p;ctx.save();ctx.translate(cx,baseY);ctx.scale(scale,scale);paper(dx,dy,w,h,ink?'#2b2118':c,sd,{scale:Math.max(.01,s),alpha:clamp(s*1.5)});ctx.restore();});
+ // arched windows (ink cuts)
+ ctx.save();ctx.translate(cx,baseY);ctx.scale(scale,scale);ctx.fillStyle=ink?'#e9dfc9':'#2a1a12';for(const wx of[-235,-15,175]){ctx.beginPath();ctx.arc(wx,-95,10,Math.PI,0);ctx.rect(wx-10,-95,20,26);ctx.fill();}ctx.restore();}
+function board(t){ctx.fillStyle='#17181d';ctx.fillRect(0,0,W,H);ctx.drawImage(grain,0,0);const g=ctx.createRadialGradient(W/2,60,80,W/2,300,900);g.addColorStop(0,'rgba(255,214,150,.13)');g.addColorStop(1,'rgba(0,0,0,.28)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+// exit helper: 1 -> 0 over [tOut, tOut+.35]
+const outA=(t,tOut)=>clamp((tOut+.35-t)/.35);
+// ---------- SCENE 1 : stone / poetry ----------
+function S1(t){board(t);const A=outA(t,4.05);ctx.save();ctx.globalAlpha=A;
+ // torn red sheet springs from left
+ const s0=spring(t-.15,...PLAYFUL);paper(655,265+(1-s0)*520,480,260,'#a02318',11,{alpha:clamp(s0*1.5),rot:.025});
+ // stone slab drops HEAVY
+ const drop=spring(t-.45,...HEAVY);const sy=235+(1-drop)*-560;paper(675,sy,470,250,'#8d8578',21,{alpha:1});paper(688,sy+13,444,224,'#9a9184',22,{});
+ // engraved verse lines draw on slab
+ ctx.save();ctx.strokeStyle='#4c463c';ctx.lineWidth=5;ctx.lineCap='round';for(let i=0;i<3;i++){const p=clamp((t-1.05-i*.32)/.55);if(p<=0)continue;ctx.beginPath();const y0=sy+75+i*55;ctx.moveTo(675+390,y0);ctx.bezierCurveTo(675+300,y0-14*p,675+170,y0+14*p,675+390-320*p,y0);ctx.stroke();}ctx.restore();
+ pin(1105,258);tape(745,228,120,-.5);
+ // archive scrap pinned at left (fills frame, VOX board feel)
+ const sc=spring(t-.7,...DEFAULT);
+ paper(95,180+(1-sc)*300,300,380,'#c9b99a',81,{alpha:clamp(sc*1.4),rot:-.02});
+ ctx.save();ctx.globalAlpha=clamp(sc*1.4);ctx.strokeStyle='rgba(70,55,35,.55)';ctx.lineWidth=3;for(let i=0;i<6;i++){ctx.beginPath();ctx.moveTo(360,245+i*46);ctx.lineTo(135+(i%3)*22,245+i*46);ctx.stroke();}ctx.restore();pin(245,205);tape(150,168,100,.4,clamp(sc));
+ // hook headline (RTL, words pop)
+ headline(['هل','يمكن','لحجرٍ'],1180,150,84,.95,.22,PLAYFUL,['#f2ead8','#f2ead8','#f2ead8']);
+ headline(['أن','يحفظ','الشعر؟'],1180,625,100,1.75,.22,PLAYFUL,['#f2ead8','#f2ead8','#d43a2a']);
+ txt('حجرٌ واحد… وقصيدة عمرها ثمانية قرون',1180,688,33,'P','#e0d3ae','right',clamp((t-2.7)/.4));
+ ctx.restore();}
+// ---------- SCENE 2 : wall / 800 years ----------
+function S2(t){board(t);const A=outA(t,10.8);ctx.save();ctx.globalAlpha=A;const lt=t-4.39;
+ headline(['وهل','يمكن','لجدرانٍ'],1150,140,68,.25,.2,PLAYFUL,[]);
+ headline(['أن','تروي','تاريخًا؟'],1150,225,68,.95,.2,PLAYFUL,['#f2ead8','#f2ead8','#d43a2a']);
+ // brick wall builds (staggered springs)
+ const cols=5,bw=150,bh=62;for(let rI=0;rI<3;rI++)for(let cI=0;cI<cols;cI++){const idx=rI*cols+cI;const s=spring(lt-1.5-idx*.11,...SNAPPY);if(s<=0.02)continue;const bx=150+cI*(bw+14)+(rI%2)*40,by=640-rI*(bh+8);paper(bx,by+(1-s)*120,bw,bh,idx%4===0?'#a02318':'#b9a888',100+idx,{scale:1,alpha:clamp(s*1.6)});}
+ // timeline + counter
+ const tp=clamp((lt-3.4)/1.6);ctx.save();ctx.strokeStyle='#d8c9a3';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(1150,330);ctx.lineTo(1150-980*tp,330);ctx.stroke();for(let i=0;i<=8;i++){const s=spring(lt-3.4-i*.18,...SNAPPY);if(s<=0)continue;const x=1150-i*122;ctx.fillStyle=i===8?'#d43a2a':'#d8c9a3';ctx.beginPath();ctx.arc(x,330,7*s,0,7);ctx.fill();}ctx.restore();
+ const num=Math.round(track(lt,[[3.1,0],[4.9,800]],90,20));txt(String(num),1150,505,135,'A','#d43a2a','right',clamp((lt-3.0)/.3));
+ if(lt>5.0)label('ثمانية قرون كاملة',760,505,34);
+ ctx.restore();}
+// ---------- SCENE 3 : hill / palace / manuscript ----------
+function S3(t){board(t);const A=outA(t,25.7);ctx.save();ctx.globalAlpha=A;const lt=t-11.19;
+ // archival map unfolds
+ const ms=spring(lt-.15,...DEFAULT);paper(90,90,1100,540,'#c4b28d',41,{scale:Math.max(.01,ms),alpha:clamp(ms*1.4)});
+ paper(105,105,1070,510,'#cdbb96',42,{});
+ // map grid strokes
+ ctx.save();ctx.strokeStyle='rgba(90,70,40,.25)';ctx.lineWidth=2;for(let i=1;i<8;i++){ctx.beginPath();ctx.moveTo(105+i*134,105);ctx.lineTo(105+i*134,615);ctx.stroke();}for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(105,105+i*128);ctx.lineTo(1175,105+i*128);ctx.stroke();}ctx.restore();
+ // sky sun + label
+ const sun=spring(lt-1.1,...PLAYFUL);ctx.save();ctx.fillStyle='#c9a227';ctx.beginPath();ctx.arc(230,205,42*Math.max(.01,sun),0,7);ctx.fill();ctx.restore();
+ if(lt>1.0)label('هضبة السبيكة',1170,150,30);
+ // layered hills rise
+ const hills=[['#6e4a2f',430,51],['#7d3b26',490,52],['#93502e',545,53]];hills.forEach((h,i)=>{const s=spring(lt-1.6-i*.35,...DEFAULT);ctx.save();ctx.translate(0,(1-s)*130);ctx.globalAlpha=clamp(s*1.5);tornPath(90,h[1],1100,720-h[1],h[2],16);ctx.fillStyle=h[0];ctx.fill();ctx.restore();});
+ // Granada houses pop
+ const hr=rng(99);const hpos=Array.from({length:11},(_,i)=>[155+i*38+hr()*14,548+((i*29)%52)+hr()*8]);for(let i=0;i<11;i++){const s=spring(lt-3.1-i*.13,...PLAYFUL);if(s<=0.02)continue;const hx=hpos[i][0],hy=hpos[i][1];ctx.save();ctx.translate(hx,hy);ctx.scale(s*1.35,s*1.35);ctx.fillStyle='#e8e0cc';ctx.fillRect(-22,-20,44,20);ctx.fillStyle='#8f3a26';ctx.beginPath();ctx.moveTo(-27,-20);ctx.lineTo(0,-36);ctx.lineTo(27,-20);ctx.fill();ctx.restore();}
+ if(lt>3.4)label('غرناطة',500,640,28);
+ // palace assembles on hilltop
+ palace(850,478,1.12,lt,5.2);
+ headline(['يقف','قصرٌ','ليكون','قصيدة'],1150,120+560,1,.0,PLAYFUL,[]); // placeholder no-op size1 hidden
+ if(lt>5.0)label('قصرٌ لم يُبنَ ليكون مجرد قصر',1170,205,29);
+ // manuscript takes over: بل كُتب ليكون قصيدة
+ const mp=spring(lt-11.4,...DEFAULT);if(mp>0.02){paper(300,140,660,450,'#ece1c8',61,{scale:Math.max(.01,mp),alpha:clamp(mp*1.5),rot:-.015});palace(630,415,.72,lt,11.7,true);
+  // calligraphy reveal RTL clip
+  const rp=clamp((lt-12.6)/1.5);ctx.save();ctx.beginPath();ctx.rect(915-580*rp,450,580*rp,115);ctx.clip();txt('بَلْ كُتِبَ ليكونَ قصيدة',915,540,56,'A','#7d2418','right',1);ctx.restore();}
+ ctx.restore();}
+// ---------- SCENE 4 : title / real photo ----------
+function S4(t){board(t);const lt=t-26.12;const fade=clamp((6.15-lt)/.5);
+ ctx.save();ctx.globalAlpha=clamp(fade);
+ // red torn backdrop
+ const s0=spring(lt-.05,...PLAYFUL);paper(55,70+(1-s0)*420,575,480,'#a02318',71,{alpha:clamp(s0*1.5),rot:.02});
+ // real photo print, taped
+ const ps=spring(lt-.35,...DEFAULT);ctx.save();ctx.translate(335,305);ctx.rotate(-.035);ctx.scale(Math.max(.01,ps),Math.max(.01,ps));ctx.globalAlpha=clamp(ps*1.5);ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=22;ctx.shadowOffsetY=10;ctx.fillStyle='#efe8d8';ctx.fillRect(-275,-190,550,380);ctx.shadowColor='transparent';const img=document.getElementById('pano');ctx.save();ctx.beginPath();ctx.rect(-260,-175,520,305);ctx.clip();ctx.filter='grayscale(.55) contrast(1.12) sepia(.28)';ctx.drawImage(img,-260,-175,520,305);ctx.restore();ctx.filter='none';txt('الحمراء فوق هضبة السبيكة',255,168,24,'P','#3a3226','right',1);ctx.restore();tape(140,130,120,-.6);tape(565,135,120,.5);pin(350,125);
+ // red thread photo -> title
+ const rp=clamp((lt-3.6)/1.1);ctx.save();ctx.strokeStyle='#d43a2a';ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(625,250);ctx.bezierCurveTo(700,230,760,300,880,290);ctx.setLineDash([2000]);ctx.lineDashOffset=2000*(1-rp);ctx.stroke();ctx.restore();pin(625,250);
+ // title stamp HEAVY
+ const ts=spring(lt-1.15,...HEAVY);ctx.save();ctx.translate(955,305);ctx.scale(Math.max(.01,ts),Math.max(.01,ts));ctx.globalAlpha=clamp(ts*1.6);ctx.direction='rtl';ctx.textAlign='center';ctx.font='700 104px Amiri';ctx.fillStyle='#e8ddc4';ctx.fillText('قصر الحمراء',0,0);ctx.font='400 40px Amiri';ctx.fillStyle='#c9a227';ctx.fillText('ولا غالبَ إلا الله',0,66);ctx.restore();
+ if(lt>2.9)label('آخر شاهدٍ حيّ على مجد الأندلس',1175,495,34);
+ if(lt>4.6)txt('قصيدةٌ من حجر — لا تموت',1175,575,30,'P','#cbbfa5','right',clamp((lt-4.6)/.5));
+ ctx.restore();}
+window.seek=(t)=>{performance_t=t;ctx.clearRect(0,0,W,H);if(t<4.39)S1(t);else if(t<11.19)S2(t);else if(t<26.12)S3(t);else S4(t);
+ // subtle living-paper breath on holds (deterministic sin)
+ };
+</script></body></html>
