@@ -22,6 +22,12 @@ body{margin:0;background:#000}canvas{display:block}
 <img id="gp2" src="assets/cut/granada_p2.webp" style="display:none">
 <img id="manu" src="assets/cut/manuscript.webp" style="display:none">
 <img id="pano" src="assets/alhambra_panorama.jpg" style="display:none">
+<img id="lionsP" src="assets/plates/lions_plate.jpg" style="display:none">
+<img id="waterP" src="assets/plates/water_plate.jpg" style="display:none">
+<img id="collP" src="assets/plates/collapse_plate.jpg" style="display:none">
+<img id="salonP" src="assets/plates/salon_plate.jpg" style="display:none">
+<img id="fallP" src="assets/plates/fall_plate.jpg" style="display:none">
+<img id="todayP" src="assets/plates/today_plate.jpg" style="display:none">
 <script>
 const cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=1280,H=720;
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
@@ -114,6 +120,37 @@ function S4(t){const lt=t-26.12;CAM={x:648,y:358,z:1.2-track(lt,[[0,0],[6.4,.17]
  if(lt>2.9)label('آخر شاهدٍ حيّ على مجد الأندلس',1175,472,32);
  if(lt>4.6)txt('قصيدةٌ من حجر — لا تموت',1175,548,28,'P','#e8d9ae','right',clamp((lt-4.6)/.5));
  finish();}
+
+// ================= MUWASHAH INTERLUDE (song takes over from the narrator) =================
+const LYRICS=[['جادك','الغيثُ','إذا','الغيثُ','همى',2],['يا','زمانَ','الوصلِ','بالأندلسِ',13],['لم','يكن','وصلُك','إلا','حُلمًا',24],['في','الكرى','أو','خُلسةَ','المختلسِ',33.5]];
+function songLine(words,y,tIn,lt){ctx.save();ctx.direction='rtl';ctx.font='700 56px Amiri';const widths=words.map(w=>ctx.measureText(w+' ').width);const total=widths.reduce((a,b)=>a+b,0);let x=640+total/2;
+ words.forEach((wd,i)=>{const w=widths[i];const s=spring(Math.floor(lt*16)/16-tIn-i*.55,...PLAYFUL);if(s>.02){const beat=Math.max(0,1-((lt*1.594)%1))*.5;const dy=Math.sin(lt*3.19-i*.9)*5-Math.max(.01,s)*0+ (1-Math.max(.01,s))*30;ctx.save();ctx.translate(x-w/2,y+dy);const sc=Math.max(.01,s)*(1+.06*beat);ctx.scale(sc,sc);ctx.globalAlpha=clamp(s*1.6);ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,.65)';ctx.shadowBlur=12;ctx.shadowOffsetY=4;ctx.fillStyle=i%4===3?'#e9bc62':'#f7efdb';ctx.fillText(wd,0,0);ctx.restore();}x-=w;});ctx.restore();}
+function SONG(lt){CAM={x:640,y:360,z:1.03+track(lt,[[0,0],[42,.12]],40,14),focus:1.18,lx:1020,ly:400};bg();plate($('salonP'),{depth:.8,w:1520});dark(.18);
+ show('sheet06_e01',330,490,430,-100,-99,{depth:1.24}); // placeholder never shows (times below)
+ // oud + lantern + poet composed in the salon, all present from the first beat
+ layer(E('sheet06_e01'),330,495,430,{depth:1.24,scale:Math.max(.01,spring(Math.floor(lt*16)/16-.4,...DEFAULT)),rot:-.07+Math.sin(T*.9)*.012,alpha:clamp(spring(Math.floor(lt*16)/16-.4)*1.5)});
+ layer(E('sheet06_e02'),945,480,330,{depth:1.18,scale:Math.max(.01,spring(Math.floor(lt*16)/16-.9,...DEFAULT)),alpha:clamp(spring(Math.floor(lt*16)/16-.9)*1.5)});
+ layer(E('sheet06_e05'),1120,300,190,{depth:1.2,scale:Math.max(.01,spring(Math.floor(lt*16)/16-1.3,...PLAYFUL)),alpha:clamp(spring(Math.floor(lt*16)/16-1.3)*1.5)});
+ // notes ride the beat upward
+ for(let i=0;i<5;i++){const ny=560-((lt*26+i*90)%300);layer(E(i%2?'sheet06_e06':'sheet06_e07'),300+i*170,ny,90,{depth:1.2,scale:.9,alpha:.28+.3*Math.max(0,1-((lt*1.594+i*.2)%1)),rot:Math.sin(T+i)*.2});}
+ LYRICS.forEach((L,i)=>{const words=L.slice(0,-1),t0=L[L.length-1];if(lt>t0-.2)songLine(words,300+i*86-(lt>24?40:0),t0,lt);});
+ if(lt>1)label('الموشّح — كما غُنّي في الحمراء',1150,150,27);
+ finish();}
+// ---------- CREDIT beat after the song (virtual 183.95-196.4) ----------
+function CREDIT(t){const lt=t-183.95;CAM={x:640,y:360,z:1.05+track(lt,[[0,0],[12,.07]],48,15),focus:1.16,lx:800,ly:250};bg();plate($('salonP'),{depth:.8,w:1500});dark(.3);
+ show('sheet06_e03',620,370,580,184.4,196.2,{from:'top',depth:1.1});
+ show('sheet06_e02',985,490,320,187.5,196.2,{from:'right',depth:1.2});
+ show('sheet06_e01',300,510,360,189,196.2,{from:'left',float:true,depth:1.2});
+ if(lt>2)label('كتبها لسان الدين بن الخطيب — وزير الحمراء وشاعرها',1150,160,26);
+ popText('لحنٌ لا يموت',640,640,56,190.5,{color:'#e9bc62'});finish();}
+// ---------- END CREDITS ----------
+function CREDITS(t){const lt=t-299.49;CAM={x:640,y:360,z:1.02,focus:1,lx:640,ly:200};bg();plate($('duskP'),{depth:.8,w:1560});dark(.72);
+ layer($('palace'),640,300,760,{depth:1.05,scale:Math.max(.01,spring(Math.floor(lt*16)/16-.3,...DEFAULT)),alpha:.9});
+ popText('الحمراء — قصيدةٌ من حجر',640,520,54,.6,{color:'#f4ecd9'});
+ popText('المونتاج والتصميم بواسطة',640,592,40,1.6,{color:'#cbbf9f',font:'Plex'});
+ popText('شذى ياسر',640,662,62,2.2,{color:'#e9bc62'});
+ dark(clamp((lt-5)/1.2)*.9);finish();}
+
 // ================= FULL FILM: element loader + scenes S5-S13 =================
 const EI={}; const __load=[];
 const ELN={sheet01:6,sheet02:6,sheet03:6,sheet04:10,sheet05:5,sheet06:7,sheet07:7,sheet08:6,sheet09:12,sheet10:7};
@@ -127,29 +164,33 @@ function show(id,cx,cy,w,tIn,tOut,o={}){const sIn=spring(ET-tIn,...(o.preset||DE
  layer(E(id),cx,cy,w,{depth:o.depth??1.12,scale:Math.max(.01,sIn)*(tOut?.82+.18*outP:1),dx:ox,dy:oy+fl,rot:(o.rot||0)+(1-sIn)*(o.spin||0),alpha:clamp(sIn*1.55)*outP,flip:o.flip});}
 function popText(str,cx,cy,size,tIn,o={}){const s=spring(ET-tIn,...(o.preset||HEAVY));if(s<=.02)return;ctx.save();ctx.translate(cx,cy);ctx.scale(Math.max(.01,s),Math.max(.01,s));ctx.globalAlpha=clamp(s*1.6);ctx.direction='rtl';ctx.textAlign=o.align||'center';ctx.font=`700 ${size}px ${o.font||'Amiri'}`;ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=14;ctx.shadowOffsetY=5;ctx.fillStyle=o.color||'#f4ecd9';ctx.fillText(str,0,0);ctx.restore();}
 function dark(p){ctx.save();ctx.fillStyle=`rgba(5,5,10,${clamp(p)})`;ctx.fillRect(0,0,W,H);ctx.restore();}
-function S5(t){const lt=t-32.6;CAM={x:640+track(lt,[[0,-50],[28,70]],55,16),y:360,z:1.05+track(lt,[[0,0],[28,.14]],48,15),focus:1.12,lx:760,ly:220};bg();plate($('mapP'),{depth:.78,w:1470});dark(.18);
- show('sheet01_e01',370,390,290,33.2,41.5,{from:'top',rot:.16,spin:.25});
- show('sheet01_e02',880,520,450,37.4,45.5,{from:'right'});
- show('sheet01_e03',650,420,560,42.4,54,{from:'left',preset:HEAVY});
- show('sheet01_e04',1000,290,290,46.2,54,{from:'top',preset:PLAYFUL});
- show('sheet01_e06',400,450,390,50.8,58.5,{from:'bottom'});
- layer($('palace'),710,350,640,{depth:1.14,scale:Math.max(.01,spring(ET-55.4,...DEFAULT)),alpha:clamp(spring(ET-55.4)*1.5)});
- popText('١٢٣٨',1050,300,110,34,{color:'#e0483a'});
- if(lt>5)label('المدن تتساقط',1150,170,29);
- if(lt>13.5)label('محمد بن يوسف بن نصر — ابن الأحمر',1150,640,27);
- popText('حلمٌ أخير',640,640,54,56.5,{color:'#e9bc62'});finish();}
-function S6(t){const lt=t-61.5;CAM={x:640+track(lt,[[0,40],[28,-60]],55,16),y:362,z:1.04+track(lt,[[0,0],[28,.16]],48,15),focus:1.1,lx:820,ly:230};bg();plate($('mapP'),{depth:.78,w:1470});dark(.12);
- show('sheet02_e01',640,610,760,62.2,69.5,{from:'left',rot:.04});
- show('sheet02_e04',330,250,540,66,74,{from:'top'});
- show('sheet02_e02',770,360,660,70.4,79,{from:'right',preset:HEAVY});
- show('sheet02_e05',350,530,500,74.8,82.5,{from:'bottom'});
- show('sheet02_e06',1030,520,250,79.4,86.5,{from:'right',preset:PLAYFUL});
- layer($('palace'),760,320,580,{depth:1.14,scale:Math.max(.01,spring(ET-83.4,...DEFAULT)),alpha:clamp(spring(ET-83.4)*1.5)});
- popText('٦ كم',1085,470,86,71.2,{color:'#7fb2d9'});
- if(lt>1)label('نهر دارو',1150,165,28);
- if(lt>9.5)label('قناةٌ تجرّ الماء إلى القمة',1150,165,28);
- if(lt>22.5)label('سُمّيت الحمراء… للون طينها الأحمر',1150,652,27);
- popText('وطنٌ أخير',640,150,58,86.8,{color:'#e9bc62'});finish();}
+function S5(t){const lt=t-32.6;CAM={x:640+track(lt,[[0,-40],[28,60]],55,16),y:362,z:1.04+track(lt,[[0,0],[28,.13]],48,15),focus:1.1,lx:760,ly:220};bg();plate($('collP'),{depth:.8,w:1500});dark(.1);
+ // composed stage: standing city far-right (depth small), falling tower right-ground, horseman hero left-ground, flag rises behind him
+ show('sheet01_e02',1010,565,360,33.4,41.5,{from:'right',depth:.95});
+ show('sheet01_e01',905,505,240,34.2,41.5,{from:'top',rot:.22,spin:.3,depth:1.0});
+ show('sheet01_e03',430,500,520,42.4,53.5,{from:'left',preset:HEAVY,depth:1.18});
+ show('sheet01_e04',705,330,250,46.2,53.5,{from:'top',preset:PLAYFUL,depth:1.05});
+ // red route string: horseman -> standing city (the retreat to Granada)
+ const rp=clamp((lt-15)/1.4);if(rp>0){ctx.save();ctx.strokeStyle='#d43a2a';ctx.lineWidth=4;ctx.setLineDash([1500]);ctx.lineDashOffset=1500*(1-rp);ctx.beginPath();ctx.moveTo(620,470);ctx.bezierCurveTo(760,430,860,470,975,520);ctx.stroke();ctx.restore();pin(620,470);}
+ popText('١٢٣٨',1120,210,96,34.6,{color:'#e0483a'});
+ if(lt>5)label('المدن تتساقط… ومدينةٌ تصمد',1150,160,28);
+ if(lt>13.5)label('محمد بن يوسف بن نصر — ابن الأحمر',1150,665,27);
+ // foundation: palace dream assembles on the horizon line
+ layer($('palace'),760,300,560,{depth:.98,scale:Math.max(.01,spring(ET-55.4,...DEFAULT)),alpha:clamp(spring(ET-55.4)*1.5)*.92});
+ popText('حلمٌ أخير',640,655,52,56.5,{color:'#e9bc62'});finish();}
+function S6(t){const lt=t-61.5;CAM={x:640+track(lt,[[0,35],[28,-55]],55,16),y:362,z:1.05+track(lt,[[0,0],[28,.15]],48,15),focus:1.1,lx:820,ly:230};bg();plate($('waterP'),{depth:.8,w:1500});dark(.06);
+ // stage: river foreground ribbon, terraces left-mid, jug right foreground with pin, palace crowns the plate's hill
+ show('sheet02_e01',620,625,820,62.2,70,{from:'left',rot:.03,depth:1.22});
+ show('sheet02_e05',330,540,430,66.2,74.5,{from:'bottom',depth:1.05});
+ show('sheet02_e06',1065,545,235,70.5,79,{from:'right',preset:PLAYFUL,depth:1.25});
+ layer($('palace'),770,265,520,{depth:.97,scale:Math.max(.01,spring(ET-74,...DEFAULT)),alpha:clamp(spring(ET-74)*1.5)*.95});
+ // measured channel line draws across the plate
+ const rp=clamp((lt-9.5)/2.2);if(rp>0){ctx.save();ctx.strokeStyle='#bfe0f2';ctx.lineWidth=6;ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=6;ctx.beginPath();ctx.moveTo(180,215);ctx.bezierCurveTo(430,300,620,330,905,300);ctx.setLineDash([1600]);ctx.lineDashOffset=1600*(1-rp);ctx.stroke();ctx.restore();}
+ popText('٦ كم',1090,455,80,72,{color:'#bfe0f2'});
+ if(lt>1)label('نهر دارو',1150,160,28);
+ if(lt>10.5)label('قناةٌ تجرّ الماء ستةَ كيلومترات',1150,160,28);
+ if(lt>21)label('سُمّيت الحمراء… للون طينها الأحمر',1150,665,27);
+ popText('وطنٌ أخير',640,150,56,86.8,{color:'#e9bc62'});finish();}
 function S7(t){const lt=t-90.3;CAM={x:640+track(lt,[[0,-40],[20,55]],55,16),y:360,z:1.06+track(lt,[[0,0],[20,.13]],48,15),focus:1.14,lx:760,ly:230};bg();plate($('stoneP'),{depth:.8,w:1500});dark(.28);
  show('sheet03_e02',640,430,680,91,100.5,{from:'bottom',preset:HEAVY});
  show('sheet03_e06',960,500,430,94.8,101,{from:'right'});
@@ -159,14 +200,16 @@ function S7(t){const lt=t-90.3;CAM={x:640+track(lt,[[0,-40],[20,55]],55,16),y:36
  show('sheet04_e08',640,610,460,108.2,110.4,{from:'bottom'});
  if(lt>1.2)label('يوسف الأول · محمد الخامس',1150,168,28);
  if(lt>12)label('بهو الريحان — بركةٌ تعكس السماء',1150,652,27);finish();}
-function S8(t){const lt=t-110.5;CAM={x:640+track(lt,[[0,50],[15,-50]],55,16),y:360,z:1.05+track(lt,[[0,0],[15,.15]],48,15),focus:1.16,lx:820,ly:240};bg();plate($('stoneP'),{depth:.8,w:1500});dark(.34);
- show('sheet05_e01',640,320,580,111.3,119.5,{from:'top',preset:HEAVY});
- show('sheet05_e02',400,540,500,115.2,125.5,{from:'left'});
- show('sheet05_e02',885,540,500,117.2,125.5,{from:'right',flip:true});
- show('sheet05_e03',640,430,290,121.4,125.8,{from:'bottom'});
- popText('١٢ أسدًا',1080,610,64,116,{color:'#e9bc62'});
- popText('١٢٤ عمودًا',230,240,60,122.2,{color:'#e9bc62'});
- if(lt>1)label('بهو الأسود — قلب الحمراء النابض',1150,168,28);finish();}
+function S8(t){const lt=t-110.5;CAM={x:640+track(lt,[[0,45],[15,-45]],55,16),y:362,z:1.05+track(lt,[[0,0],[15,.14]],48,15),focus:1.14,lx:640,ly:230};bg();plate($('lionsP'),{depth:.82,w:1500});dark(.12);
+ // courtyard composition: fountain center on axis, lions flank it facing inward, columns as foreground pillars
+ show('sheet05_e03',205,430,190,111.2,125.8,{from:'left',depth:1.28});
+ show('sheet05_e03',1075,430,190,111.2,125.8,{from:'right',depth:1.28});
+ show('sheet05_e01',640,375,520,112.2,125.8,{from:'top',preset:HEAVY,depth:1.05});
+ show('sheet05_e02',395,565,400,115.2,125.8,{from:'left',depth:1.2});
+ show('sheet05_e02',890,565,400,116.8,125.8,{from:'right',flip:true,depth:1.2});
+ popText('١٢ أسدًا',640,665,60,117,{color:'#e9bc62'});
+ popText('١٢٤ عمودًا',1120,250,56,121.5,{color:'#e9bc62'});
+ if(lt>1)label('بهو الأسود — قلب الحمراء النابض',1150,160,28);finish();}
 function S9(t){const lt=t-126;CAM={x:640,y:360+track(lt,[[0,14],[21,-10]],48,15),z:1.07+track(lt,[[0,0],[21,.12]],48,15),focus:1.15,lx:640,ly:200};bg();plate($('mapP'),{depth:.78,w:1470});dark(.42);
  show('sheet05_e04',640,320,640,126.9,136,{from:'top',preset:HEAVY});
  show('sheet05_e05',350,545,440,132.2,140,{from:'left'});
@@ -175,31 +218,31 @@ function S9(t){const lt=t-126;CAM={x:640,y:360+track(lt,[[0,14],[21,-10]],48,15)
  ctx.save();ctx.globalAlpha=.13;ctx.direction='rtl';ctx.textAlign='center';ctx.font='700 44px Amiri';ctx.fillStyle='#e9bc62';for(let r=0;r<3;r++)for(let c=0;c<3;c++)ctx.fillText('ولا غالب إلا الله',220+c*420,600+r*52);ctx.restore();
  popText('ولا غالبَ إلا الله',640,470,88,141.5,{color:'#e9bc62',preset:HEAVY});
  if(lt>1.2)label('قبة المقرنصات — نجومٌ تجمّدت',1150,168,28);finish();}
-function S10(t){const lt=t-147;CAM={x:640+track(lt,[[0,-30],[21,45]],55,16),y:360,z:1.05+track(lt,[[0,0],[21,.13]],48,15),focus:1.16,lx:1060,ly:430};bg();plate($('stoneP'),{depth:.8,w:1500});dark(.38);
- show('sheet06_e02',890,430,390,147.9,157,{from:'right'});
- show('sheet06_e01',410,440,500,152.2,161,{from:'left',rot:-.08,float:true});
- show('sheet06_e03',680,330,540,156.8,164.5,{from:'top'});
- show('sheet06_e05',1085,500,230,161.2,167.8,{from:'bottom',preset:PLAYFUL});
- show('sheet06_e06',480,270,150,164.2,167.8,{from:'bottom',float:true,phase:1});
- show('sheet06_e07',740,250,170,165.4,167.8,{from:'bottom',float:true,phase:2.4});
- popText('جادك الغيثُ إذا الغيثُ همى',640,620,57,162.8,{color:'#f4ecd9'});
- popText('يا زمانَ الوصلِ بالأندلسِ',640,685,57,165.8,{color:'#e9bc62'});
- if(lt>9.8)label('لسان الدين بن الخطيب',1150,168,28);finish();}
-function S11(t){const lt=t-168;CAM={x:640+track(lt,[[0,30],[28,-40]],55,16),y:360,z:1.08+track(lt,[[0,0],[28,.1]],48,15),focus:1.12,lx:900,ly:220};bg();plate($('duskP'),{depth:.8,w:1560});dark(.15);
- show('sheet07_e01',640,350,740,168.9,177,{from:'top',spin:-.5,preset:HEAVY});
- show('sheet07_e02',890,285,430,173.2,180,{from:'right'});
- const kx=920-clamp((T-177.5)/8.5)*500; show('sheet07_e05',kx,545,470,177.5,187,{from:'right'});
- show('sheet07_e07',1060,235+clamp((T-183)/8)*170,330,183,191,{from:'top'});
- show('sheet07_e06',640,440,310,187.2,195.8,{from:'bottom'});
- popText('١٤٩٢',230,260,105,169.8,{color:'#e0483a'});
- if(lt>9.5)label('تسليم المفاتيح',1150,168,28);
- if(lt>15.5)label('زفرة العربي الأخيرة',1150,640,28);
- dark(clamp((lt-19)/8)*.38);finish();}
+function S10(t){const lt=t-147;CAM={x:640+track(lt,[[0,-30],[29,45]],55,16),y:360,z:1.05+track(lt,[[0,0],[29,.13]],48,15),focus:1.16,lx:1060,ly:430};bg();plate($('salonP'),{depth:.8,w:1500});dark(.22);
+ show('sheet06_e02',905,470,360,147.9,175.5,{from:'right',depth:1.2});
+ show('sheet06_e01',400,480,470,152.2,175.5,{from:'left',rot:-.08,float:true,depth:1.22});
+ show('sheet06_e03',665,315,500,156.8,175.5,{from:'top',depth:1.08});
+ show('sheet06_e05',1090,515,215,161.2,175.5,{from:'bottom',preset:PLAYFUL,depth:1.25});
+ show('sheet06_e06',470,255,140,164.2,175.5,{from:'bottom',float:true,phase:1,depth:1.15});
+ popText('جادك الغيثُ إذا الغيثُ همى',640,625,55,169.5,{color:'#f4ecd9'});
+ popText('يا زمانَ الوصلِ بالأندلسِ',640,690,55,172.5,{color:'#e9bc62'});
+ if(lt>3)label('حيث كان الشعر يُغنّى',1150,160,28);finish();}
+function S11(t){const lt=t-196.4;CAM={x:640+track(lt,[[0,30],[24,-40]],55,16),y:362,z:1.07+track(lt,[[0,0],[24,.1]],48,15),focus:1.12,lx:900,ly:220};bg();plate($('fallP'),{depth:.8,w:1560});dark(.1);
+ // the key is surrendered in the foreground, then the lone figure descends the path the plate already draws
+ show('sheet07_e01',585,335,660,196.9,205,{from:'top',spin:-.4,preset:HEAVY,depth:1.22});
+ show('sheet07_e02',925,270,390,201,207.5,{from:'right',depth:1.1});
+ const kx=880-clamp((T-205.5)/8)*430; show('sheet07_e05',kx,560,430,205.5,216,{from:'right',depth:1.24});
+ show('sheet07_e06',650,450,290,212.5,220.2,{from:'bottom',depth:1.12});
+ popText('١٤٩٢',225,250,100,197.6,{color:'#e0483a'});
+ if(lt>3)label('تسليم المفاتيح',1150,160,28);
+ if(lt>10)label('زفرة العربي الأخيرة',1150,650,28);
+ dark(clamp((lt-15)/8)*.4);finish();}
 function S12(t){const lt=t-196.4;CAM={x:640+track(lt,[[0,-45],[24,55]],55,16),y:360,z:1.05+track(lt,[[0,0],[24,.14]],48,15),focus:1.13,lx:800,ly:230};bg();plate($('mapP'),{depth:.78,w:1470});dark(.25);
  show('sheet08_e01',400,410,540,197.3,205,{from:'left'});
  show('sheet08_e02',890,390,480,201.2,207.5,{from:'right'});
  show('sheet08_e03',390,440,300,205.4,212,{from:'bottom'});
  show('sheet08_e06',830,460,390,208.4,214.5,{from:'right'});
+ if(lt>11.5){ctx.save();ctx.globalAlpha=clamp((lt-11.5)/1.2);plate($('todayP'),{depth:.82,w:1500});ctx.restore();}
  show('sheet09_e01',340,490,260,213.2,219.8,{from:'left'});
  show('sheet09_e06',620,490,260,214.6,219.8,{from:'bottom'});
  show('sheet09_e02',890,490,240,215.8,219.8,{from:'right'});
@@ -219,5 +262,8 @@ function S13(t){const lt=t-220.6;CAM={x:640,y:358,z:1.16-track(lt,[[0,0],[24,.14
 
 window.seek=(t)=>{T=t;ET=Math.floor(t*16)/16;ctx.clearRect(0,0,W,H);
  // camera-blur beat cuts: 5-frame push burst after each boundary
- if(t<4.39)S1(t);else if(t<11.19)S2(t);else if(t<26.12)S3(t);else if(t<32.6)S4(t);else if(t<61.5)S5(t);else if(t<90.3)S6(t);else if(t<110.5)S7(t);else if(t<126)S8(t);else if(t<147)S9(t);else if(t<168)S10(t);else if(t<196.4)S11(t);else if(t<220.6)S12(t);else S13(t);};
+ if(t>=299.49)CREDITS(t);
+ else if(t<176){ if(t<4.39)S1(t);else if(t<11.19)S2(t);else if(t<26.12)S3(t);else if(t<32.6)S4(t);else if(t<61.5)S5(t);else if(t<90.3)S6(t);else if(t<110.5)S7(t);else if(t<126)S8(t);else if(t<147)S9(t);else S10(t); }
+ else if(t<218)SONG(t-176);
+ else { const vt=t-34.05; if(vt<196.4)CREDIT(vt);else if(vt<220.6)S11(vt);else if(vt<245.5)S12(vt);else S13(vt); }};
 </script></body></html>

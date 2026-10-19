@@ -1,13 +1,17 @@
 import numpy as np, soundfile as sf
 from scipy.signal import butter, sosfilt
-SR=48000; DUR=266.0; buf=np.zeros(int(SR*DUR)); rng=np.random.default_rng(7)
+SR=48000; DUR=306.0; buf=np.zeros(int(SR*DUR)); rng=np.random.default_rng(7)
 def bp(x,lo,hi,o=3): return sosfilt(butter(o,[lo,hi],btype='bandpass',fs=SR,output='sos'),x)
 def lp(x,c,o=3): return sosfilt(butter(o,c,btype='lowpass',fs=SR,output='sos'),x)
 def hp(x,c,o=3): return sosfilt(butter(o,c,btype='highpass',fs=SR,output='sos'),x)
 def add(t0,sig,g=1.0):
     i=int(t0*SR); n=min(len(sig),len(buf)-i); buf[i:i+n]+=sig[:n]*g
 CUR=[0.]
-def at(t,fn,*a,**k): CUR[0]=t; fn(*a,**k)
+SHIFT=[0.]
+def at(t,fn,*a,**k):
+    if t>=183.95: t+=34.05
+    elif t>176: return
+    CUR[0]=t; fn(*a,**k)
 def paper_slide(d=.4,g=.45):
     n=int(SR*d); x=bp(rng.standard_normal(n),700,5200); add(CUR[0], x*(np.sin(np.pi*np.arange(n)/n)**2)*.6,g)
 def paper_tap(g=.65):
@@ -56,7 +60,7 @@ for t in beats: at(t-.25,paper_slide,.32); at(t+.05,paper_tap,.5)
 for t in (34,71.2,116,122.2,141.5,169.8,227): at(t,stamp_,.55)
 at(91,thud,.9); at(111.3,thud,.7); at(126.9,thud,.7); at(168.9,clank,.6); at(173.2,clank,.35)
 water(62.5,80)
-for t,f in [(170,196.0),(174,146.8),(178,220.0),(182,164.8),(186,196.0),(190,146.8),(193,110.0)]: pluck(f,t,.26)
+for t,f in [(170,196.0),(173,146.8)]: pluck(f,t,.26)
 at(183,zip_,1.0,.3)
-buf=np.clip(buf,-1,1); sf.write("/home/user/deliverables/sfx_full.wav",buf,SR)
+buf=np.clip(buf,-1,1); sf.write("/home/user/deliverables/sfx_full_v4.wav",buf,SR)
 print("sfx_full.wav",round(len(buf)/SR,1),"s peak",round(float(np.abs(buf).max()),3))
