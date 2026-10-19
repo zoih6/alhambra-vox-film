@@ -209,7 +209,7 @@ function S13(t){const lt=t-220.6;CAM={x:640,y:358,z:1.16-track(lt,[[0,0],[24,.14
  show('sheet09_e07',640,300,400,221.4,228,{from:'top',rot:-.06});
  show('sheet09_e11',430,520,430,225.2,232,{from:'left'});
  const ax=-100+clamp((T-229)/6)*1500; show('sheet09_e09',ax,175,310,229,236,{from:'left'});
- popText('مليونا زائرٍ كلَّ عام',640,620,58,227,{color:'#e9bc62'});
+ if(T<238.5)popText('مليونا زائرٍ كلَّ عام',640,620,58,227,{color:'#e9bc62'});
  layer($('palace'),640,420,880,{depth:1.12,scale:Math.max(.01,spring(ET-233.5,...DEFAULT)),alpha:clamp(spring(ET-233.5)*1.5)});
  show('sheet10_e07',1085,175,210,236.5,244.8,{from:'top',preset:PLAYFUL});
  show('sheet10_e01',235,195,230,238,244.8,{from:'left',spin:.6});
